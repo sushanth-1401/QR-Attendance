@@ -115,28 +115,57 @@ GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
 
--- 3. Synchronize auto-increment sequences above the maximum existing IDs
-SELECT setval(pg_get_serial_sequence('departments', 'department_id'), coalesce(max(department_id), 1)) FROM departments;
-SELECT setval(pg_get_serial_sequence('classrooms', 'classroom_id'), coalesce(max(classroom_id), 1)) FROM classrooms;
-SELECT setval(pg_get_serial_sequence('users', 'user_id'), coalesce(max(user_id), 1)) FROM users;
-SELECT setval(pg_get_serial_sequence('class_sections', 'section_id'), coalesce(max(section_id), 1)) FROM class_sections;
-SELECT setval(pg_get_serial_sequence('subjects', 'subject_id'), coalesce(max(subject_id), 1)) FROM subjects;
-SELECT setval(pg_get_serial_sequence('faculty_profiles', 'faculty_id'), coalesce(max(faculty_id), 1)) FROM faculty_profiles;
-SELECT setval(pg_get_serial_sequence('student_profiles', 'student_id'), coalesce(max(student_id), 1)) FROM student_profiles;
-SELECT setval(pg_get_serial_sequence('attendance_sessions', 'session_id'), coalesce(max(session_id), 1)) FROM attendance_sessions;
-SELECT setval(pg_get_serial_sequence('attendance_records', 'attendance_id'), coalesce(max(attendance_id), 1)) FROM attendance_records;
+-- 3. Synchronize auto-increment sequences safely
+DO $$
+BEGIN
+    IF pg_get_serial_sequence('departments', 'department_id') IS NOT NULL THEN
+        PERFORM setval(pg_get_serial_sequence('departments', 'department_id'), coalesce(max(department_id), 1)) FROM departments;
+    END IF;
+    IF pg_get_serial_sequence('classrooms', 'classroom_id') IS NOT NULL THEN
+        PERFORM setval(pg_get_serial_sequence('classrooms', 'classroom_id'), coalesce(max(classroom_id), 1)) FROM classrooms;
+    END IF;
+    IF pg_get_serial_sequence('users', 'user_id') IS NOT NULL THEN
+        PERFORM setval(pg_get_serial_sequence('users', 'user_id'), coalesce(max(user_id), 1)) FROM users;
+    END IF;
+    IF pg_get_serial_sequence('class_sections', 'section_id') IS NOT NULL THEN
+        PERFORM setval(pg_get_serial_sequence('class_sections', 'section_id'), coalesce(max(section_id), 1)) FROM class_sections;
+    END IF;
+    IF pg_get_serial_sequence('subjects', 'subject_id') IS NOT NULL THEN
+        PERFORM setval(pg_get_serial_sequence('subjects', 'subject_id'), coalesce(max(subject_id), 1)) FROM subjects;
+    END IF;
+    IF pg_get_serial_sequence('faculty_profiles', 'faculty_id') IS NOT NULL THEN
+        PERFORM setval(pg_get_serial_sequence('faculty_profiles', 'faculty_id'), coalesce(max(faculty_id), 1)) FROM faculty_profiles;
+    END IF;
+    IF pg_get_serial_sequence('student_profiles', 'student_id') IS NOT NULL THEN
+        PERFORM setval(pg_get_serial_sequence('student_profiles', 'student_id'), coalesce(max(student_id), 1)) FROM student_profiles;
+    END IF;
+    IF pg_get_serial_sequence('attendance_sessions', 'session_id') IS NOT NULL THEN
+        PERFORM setval(pg_get_serial_sequence('attendance_sessions', 'session_id'), coalesce(max(session_id), 1)) FROM attendance_sessions;
+    END IF;
+    IF pg_get_serial_sequence('attendance_records', 'attendance_id') IS NOT NULL THEN
+        PERFORM setval(pg_get_serial_sequence('attendance_records', 'attendance_id'), coalesce(max(attendance_id), 1)) FROM attendance_records;
+    END IF;
+END $$;
 
--- 4. Enable Supabase Realtime broadcast and live streaming on all application tables
-ALTER PUBLICATION supabase_realtime ADD TABLE departments;
-ALTER PUBLICATION supabase_realtime ADD TABLE users;
-ALTER PUBLICATION supabase_realtime ADD TABLE faculty_profiles;
-ALTER PUBLICATION supabase_realtime ADD TABLE student_profiles;
-ALTER PUBLICATION supabase_realtime ADD TABLE classrooms;
-ALTER PUBLICATION supabase_realtime ADD TABLE class_sections;
-ALTER PUBLICATION supabase_realtime ADD TABLE subjects;
-ALTER PUBLICATION supabase_realtime ADD TABLE faculty_subject_assignments;
-ALTER PUBLICATION supabase_realtime ADD TABLE attendance_sessions;
-ALTER PUBLICATION supabase_realtime ADD TABLE attendance_records;
+-- 4. Enable Supabase Realtime broadcast safely (skips if already added)
+DO $$
+DECLARE
+    tbl text;
+BEGIN
+    FOR tbl IN SELECT unnest(ARRAY[
+        'departments', 'users', 'faculty_profiles', 'student_profiles',
+        'classrooms', 'class_sections', 'subjects', 'faculty_subject_assignments',
+        'attendance_sessions', 'attendance_records'
+    ])
+    LOOP
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_publication_tables 
+            WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = tbl
+        ) THEN
+            EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE %I', tbl);
+        END IF;
+    END LOOP;
+END $$;
 
 ALTER TABLE departments REPLICA IDENTITY FULL;
 ALTER TABLE users REPLICA IDENTITY FULL;
