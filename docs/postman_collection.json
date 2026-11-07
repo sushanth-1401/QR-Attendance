@@ -1,0 +1,182 @@
+{
+  "info": {
+    "name": "Smart QR Attendance Management System API",
+    "description": "Postman API collection for testing Auth, Admin, Faculty, Student, QR, GPS, Device, and Reports endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Faculty Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"prof.sharma\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Student Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"rahul.kumar\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/auth/me", "host": ["{{baseUrl}}"], "path": ["api", "auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Faculty Operations",
+      "item": [
+        {
+          "name": "Create Attendance Session",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subjectId\": 1,\n  \"sectionId\": 1,\n  \"classroomId\": 1,\n  \"sessionDate\": \"2026-11-04\",\n  \"startTime\": \"09:00:00\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/faculty/sessions", "host": ["{{baseUrl}}"], "path": ["api", "faculty", "sessions"] }
+          }
+        },
+        {
+          "name": "Start Session",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/faculty/sessions/1/start", "host": ["{{baseUrl}}"], "path": ["api", "faculty", "sessions", "1", "start"] }
+          }
+        },
+        {
+          "name": "Fetch Dynamic QR Code & Token",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/faculty/sessions/1/qr", "host": ["{{baseUrl}}"], "path": ["api", "faculty", "sessions", "1", "qr"] }
+          }
+        },
+        {
+          "name": "Get Live Session Attendance Roster",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/faculty/sessions/1/attendance", "host": ["{{baseUrl}}"], "path": ["api", "faculty", "sessions", "1", "attendance"] }
+          }
+        },
+        {
+          "name": "Close Session",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/faculty/sessions/1/close", "host": ["{{baseUrl}}"], "path": ["api", "faculty", "sessions", "1", "close"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Student QR & Verification Flow",
+      "item": [
+        {
+          "name": "Step 1: Scan QR Code & Reserve Slot",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"<PASTE_RAW_QR_TOKEN_HERE>\",\n  \"requestId\": \"client-uuid-98765\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/student/attendance/scan", "host": ["{{baseUrl}}"], "path": ["api", "student", "attendance", "scan"] }
+          }
+        },
+        {
+          "name": "Step 2: Request Device Challenge",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceId\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/student/devices/challenge", "host": ["{{baseUrl}}"], "path": ["api", "student", "devices", "challenge"] }
+          }
+        },
+        {
+          "name": "Step 3: Complete Attendance (GPS + Device)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location\": {\n    \"latitude\": 28.5458100,\n    \"longitude\": 77.1926100,\n    \"accuracy\": 10.0,\n    \"timestamp\": 1730700000000\n  },\n  \"deviceId\": 1,\n  \"challengeId\": 1,\n  \"signature\": \"<BASE64_ECDSA_SIGNATURE>\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/student/attendance/1/verify", "host": ["{{baseUrl}}"], "path": ["api", "student", "attendance", "1", "verify"] }
+          }
+        },
+        {
+          "name": "Get Student Attendance Summary",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/student/attendance/summary", "host": ["{{baseUrl}}"], "path": ["api", "student", "attendance", "summary"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Reports & Exports",
+      "item": [
+        {
+          "name": "Export Session Attendance (Excel)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/reports/export/excel?sessionId=1", "host": ["{{baseUrl}}"], "path": ["api", "reports", "export", "excel"], "query": [{ "key": "sessionId", "value": "1" }] }
+          }
+        },
+        {
+          "name": "Export Session Attendance (PDF)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/reports/export/pdf?sessionId=1", "host": ["{{baseUrl}}"], "path": ["api", "reports", "export", "pdf"], "query": [{ "key": "sessionId", "value": "1" }] }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ]
+}
+

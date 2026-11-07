@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout('Classroom Attendance Projection', ~{::#qr-display-content})}">
+<body>
+<div id="qr-display-content">
+
+    <div class="row g-4">
+        <!-- Left Column: High-Clarity Dynamic QR Screen -->
+        <div class="col-lg-7">
+            <div class="qr-display-container">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="status-pill online">
+                        Live Stream Active
+                    </span>
+                    <span id="realtime-status-pill" class="badge bg-light text-muted border text-xs px-2 py-1">
+                        <svg th:replace="~{fragments/icons :: signal}" class="heroicon-xs me-1"></svg>
+                        <span>Realtime Connecting...</span>
+                    </span>
+                    <span class="text-xs text-muted font-mono d-flex align-items-center gap-1">
+                        <svg th:replace="~{fragments/icons :: arrow-path}" class="heroicon-xs"></svg>
+                        <span>25s Cycle</span>
+                    </span>
+                </div>
+
+                <h2 class="h4 font-semibold mb-1" th:text="${attendanceSession.subject.subjectName}">Database Management Systems</h2>
+                <div class="text-secondary text-sm mb-3">
+                    <span class="badge bg-primary font-mono me-2" th:text="${attendanceSession.subject.subjectCode}">CS301</span>
+                    Section: <strong th:text="${attendanceSession.section.sectionName}">CSE-A</strong> &bull;
+                    Location: <strong th:text="${attendanceSession.classroom != null ? attendanceSession.classroom.roomName : 'Classroom'}">Room 401</strong>
+                </div>
+
+                <!-- Dynamic QR Image -->
+                <div class="qr-image-wrapper">
+                    <img id="qr-image" src="" alt="Live Session QR Code" style="display: none;" />
+                    <div id="qr-spinner" class="py-5 text-center">
+                        <div class="spinner-border text-primary spinner-border-sm mb-2" role="status"></div>
+                        <p class="text-xs text-muted mb-0">Generating Dynamic Session Token...</p>
+                    </div>
+                </div>
+
+                <!-- 30-Second Countdown Progress Bar -->
+                <div class="qr-timer-bar">
+                    <div id="qr-progress" class="qr-timer-progress"></div>
+                </div>
+                <div class="d-flex justify-content-between text-xs text-muted px-4 font-mono">
+                    <span>Valid window: 30s</span>
+                    <span>Refresh in: <strong id="countdown-text" class="text-primary font-mono">30s</strong></span>
+                </div>
+
+                <div class="mt-4 pt-3 border-top d-flex justify-content-center gap-2">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="fetchNewQR()">
+                        <svg th:replace="~{fragments/icons :: arrow-path}" class="heroicon-sm"></svg>
+                        <span>Refresh Code</span>
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="showCloseSessionModal()">
+                        <svg th:replace="~{fragments/icons :: stop}" class="heroicon-xs"></svg>
+                        <span>Conclude Session</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Live Roster & Verification Feeds -->
+        <div class="col-lg-5">
+            <!-- Attendance Metric Card with Palette Green Accent -->
+            <div class="stat-card stat-green mb-4">
+                <div class="stat-header">
+                    <span class="stat-label">Live Attendance Count</span>
+                    <div class="stat-icon">
+                        <svg th:replace="~{fragments/icons :: user-group}"></svg>
+                    </div>
+                </div>
+                <div class="stat-value">
+                    <span id="present-count" class="text-success">0</span> <span class="text-muted fw-normal fs-5">/ <span id="enrolled-count">0</span></span>
+                </div>
+                <div class="stat-meta d-flex align-items-center gap-1" style="color: var(--success-text);">
+                    <svg th:replace="~{fragments/icons :: check-circle}" class="heroicon-xs"></svg>
+                    <span>Verified students present in classroom</span>
+                </div>
+            </div>
+
+            <!-- Present Students Roster -->
+            <div class="content-card mb-4">
+                <div class="content-card-header">
+                    <h3 class="content-card-title">
+                        <svg th:replace="~{fragments/icons :: check-circle}" class="text-success"></svg>
+                        <span>Present Students</span>
+                    </h3>
+                    <button class="btn btn-sm btn-outline-secondary py-1 px-2" onclick="refreshAttendanceData()" title="Refresh Roster">
+                        <svg th:replace="~{fragments/icons :: arrow-path}" class="heroicon-sm"></svg>
+                    </button>
+                </div>
+                <div class="content-card-body p-0" style="max-height: 260px; overflow-y: auto;">
+                    <div class="table-responsive">
+                        <table class="table-custom">
+                            <thead>
+                            <tr>
+                                <th>Reg. Number</th>
+                                <th>Student Name</th>
+                                <th>Recorded Time</th>
+                            </tr>
+                            </thead>
+                            <tbody id="present-tbody">
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-3">Awaiting student verifications...</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flagged / Failed Attempts Log -->
+            <div class="content-card">
+                <div class="content-card-header">
+                    <h3 class="content-card-title">
+                        <svg th:replace="~{fragments/icons :: exclamation-triangle}" class="text-danger"></svg>
+                        <span>Verification Exceptions</span>
+                    </h3>
+                </div>
+                <div class="content-card-body p-0" style="max-height: 180px; overflow-y: auto;">
+                    <div class="table-responsive">
+                        <table class="table-custom">
+                            <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Policy Condition</th>
+                            </tr>
+                            </thead>
+                            <tbody id="rejected-tbody">
+                            <tr>
+                                <td colspan="2" class="text-center text-muted py-2">No policy exceptions recorded.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: End Session Confirmation -->
+    <div class="modal fade" id="endSessionConfirmModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-semibold text-danger">Conclude Session</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-sm text-secondary">
+                    Are you sure you want to conclude this session? The active QR stream will be terminated and new scans will no longer be accepted.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="executeEndSession()">End Session</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- Supabase JS & Realtime Integration -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script th:src="@{/js/supabase-realtime.js}"></script>
+
+<script th:inline="javascript">
+const sessionId = /*[[${attendanceSession.sessionId}]]*/ 1;
+let countdown = 30;
+let countdownInterval = null;
+let endSessionModal = null;
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    fetchNewQR();
+    refreshAttendanceData();
+
+    // 1. Supabase Realtime Channel Subscription (Instant Push)
+    if (typeof SupabaseRealtime !== 'undefined') {
+        SupabaseRealtime.subscribeToSession(sessionId, {
+            onStatusChange: (status) => {
+                const badge = document.getElementById('realtime-status-pill');
+                if (!badge) return;
+                if (status === 'SUBSCRIBED') {
+                    badge.className = 'badge bg-success-subtle text-success border border-success-subtle text-xs px-2 py-1';
+                    badge.innerHTML = '<svg class="heroicon-xs me-1 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" /></svg> Realtime Active';
+                } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                    badge.className = 'badge bg-light text-muted border text-xs px-2 py-1';
+                    badge.innerHTML = '<svg class="heroicon-xs me-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg> Polling Mode';
+                }
+            },
+            onStudentVerified: (student) => {
+                const countEl = document.getElementById('present-count');
+                if (countEl) countEl.textContent = parseInt(countEl.textContent || '0') + 1;
+
+                const tbody = document.getElementById('present-tbody');
+                if (tbody) {
+                    if (tbody.querySelector('.text-muted')) {
+                        tbody.innerHTML = '';
+                    }
+                    const row = document.createElement('tr');
+                    row.className = 'table-light';
+                    row.innerHTML = `
+                        <td class="font-semibold font-mono text-success">
+                            <svg class="heroicon-xs text-success me-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                            ${escapeHtml(student.registerNumber || '')}
+                        </td>
+                        <td><strong>${escapeHtml(student.studentName || 'Student')}</strong></td>
+                        <td><span class="badge badge-present font-mono">Just Now</span></td>
+                    `;
+                    tbody.prepend(row);
+                }
+                showToast(`Recorded: ${student.studentName} (${student.registerNumber})`, 'success');
+            },
+            onScanRejected: (attempt) => {
+                const rejTbody = document.getElementById('rejected-tbody');
+                if (rejTbody) {
+                    if (rejTbody.querySelector('.text-muted')) {
+                        rejTbody.innerHTML = '';
+                    }
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="font-semibold text-danger">${escapeHtml(attempt.studentName || 'Student')}</td>
+                        <td><span class="badge badge-absent">${escapeHtml(attempt.reason || 'Verification Failed')}</span></td>
+                    `;
+                    rejTbody.prepend(row);
+                }
+                showToast(`Flagged attempt from ${attempt.studentName}: ${attempt.reason}`, 'warning');
+            }
+        });
+    }
+
+    // 2. Background sync fallback (every 20s)
+    setInterval(refreshAttendanceData, 20000);
+});
+
+async function fetchNewQR() {
+    const qrImg = document.getElementById('qr-image');
+    const spinner = document.getElementById('qr-spinner');
+    try {
+        const data = await fetchWithCsrf(`/api/faculty/sessions/${sessionId}/qr`);
+        if (data && data.base64Image) {
+            qrImg.src = data.base64Image;
+            qrImg.style.display = 'block';
+            if (spinner) spinner.style.display = 'none';
+
+            // Reset countdown timer
+            countdown = data.expiresInSeconds || 30;
+            startCountdownTimer(countdown);
+        } else {
+            throw new Error('Invalid QR payload returned from server');
+        }
+    } catch (err) {
+        console.error('QR fetch error:', err);
+        if (qrImg) qrImg.style.display = 'none';
+        if (spinner) {
+            spinner.style.display = 'block';
+            spinner.innerHTML = `
+                <div class="text-danger mb-2">
+                    <svg class="heroicon-lg text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" /></svg>
+                </div>
+                <p class="text-xs text-danger fw-semibold mb-2">Dynamic token refresh interrupted</p>
+                <button class="btn btn-sm btn-outline-primary" onclick="fetchNewQR()">
+                    <svg class="heroicon-xs me-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+                    Retry Generation
+                </button>
+            `;
+        }
+    }
+}
+
+function startCountdownTimer(seconds) {
+    if (countdownInterval) clearInterval(countdownInterval);
+    countdown = seconds;
+    const initialSeconds = seconds;
+
+    const progressEl = document.getElementById('qr-progress');
+    const textEl = document.getElementById('countdown-text');
+
+    progressEl.style.width = '100%';
+    textEl.textContent = `${countdown}s`;
+
+    countdownInterval = setInterval(() => {
+        countdown--;
+        textEl.textContent = `${countdown}s`;
+        const pct = (countdown / initialSeconds) * 100;
+        progressEl.style.width = `${pct}%`;
+
+        if (countdown <= 0) {
+            clearInterval(countdownInterval);
+            fetchNewQR();
+        }
+    }, 1000);
+}
+
+async function refreshAttendanceData() {
+    try {
+        const data = await fetchWithCsrf(`/api/faculty/sessions/${sessionId}/attendance`);
+        document.getElementById('present-count').textContent = data.presentCount;
+        document.getElementById('enrolled-count').textContent = data.totalEnrolled;
+
+        const tbody = document.getElementById('present-tbody');
+        if (data.presentStudents.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">No students scanned yet.</td></tr>';
+        } else {
+            tbody.innerHTML = data.presentStudents.map(s => `
+                <tr>
+                    <td class="font-semibold font-mono text-success">
+                        <svg class="heroicon-xs text-success me-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                        ${s.registerNumber}
+                    </td>
+                    <td><strong>${s.studentName}</strong></td>
+                    <td><span class="badge bg-light text-dark font-mono border">${s.markedAt ? s.markedAt.substring(11, 19) : '-'}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // Fetch rejected attempts
+        const rejRes = await fetchWithCsrf(`/api/faculty/sessions/${sessionId}/attempts`);
+        const rejTbody = document.getElementById('rejected-tbody');
+        if (rejRes.length === 0) {
+            rejTbody.innerHTML = '<tr><td colspan="2" class="text-center text-muted py-2">No policy exceptions recorded.</td></tr>';
+        } else {
+            rejTbody.innerHTML = rejRes.map(att => `
+                <tr>
+                    <td class="font-semibold text-danger">
+                        ${att.student ? (att.student.fullName + (att.student.registerNumber ? ' (' + att.student.registerNumber + ')' : '')) : 'Student'}
+                    </td>
+                    <td><span class="badge badge-absent">${att.rejectionReason || 'Verification Failed'}</span></td>
+                </tr>
+            `).join('');
+        }
+    } catch (err) {
+        console.error('Attendance fetch error:', err);
+    }
+}
+
+function showCloseSessionModal() {
+    const modalEl = document.getElementById('endSessionConfirmModal');
+    endSessionModal = new bootstrap.Modal(modalEl);
+    endSessionModal.show();
+}
+
+async function executeEndSession() {
+    if (endSessionModal) endSessionModal.hide();
+    try {
+        await fetchWithCsrf(`/api/faculty/sessions/${sessionId}/close`, { method: 'POST' });
+        showToast('Session concluded successfully', 'info');
+        setTimeout(() => window.location.href = '/faculty/dashboard', 600);
+    } catch (err) {
+        showToast(err.message, 'danger');
+    }
+}
+</script>
+</div>
+</body>
+</html>

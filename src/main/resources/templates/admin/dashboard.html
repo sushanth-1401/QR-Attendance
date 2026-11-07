@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout('Institutional Overview', ~{::#admin-content})}">
+<body>
+<div id="admin-content">
+
+    <!-- Primary Metric Stat Cards using the Cohesive Palette & Heroicons -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-sm-6">
+            <div class="stat-card stat-blue">
+                <div class="stat-header">
+                    <span class="stat-label">Enrolled Students</span>
+                    <div class="stat-icon">
+                        <svg th:replace="~{fragments/icons :: academic-cap}"></svg>
+                    </div>
+                </div>
+                <div class="stat-value" th:text="${stats.totalStudents}">0</div>
+                <div class="stat-meta d-flex align-items-center gap-1">
+                    <svg th:replace="~{fragments/icons :: user-group}" class="heroicon-xs text-primary"></svg>
+                    <span>Active registered profiles</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6">
+            <div class="stat-card stat-indigo">
+                <div class="stat-header">
+                    <span class="stat-label">Faculty Members</span>
+                    <div class="stat-icon">
+                        <svg th:replace="~{fragments/icons :: user-group}"></svg>
+                    </div>
+                </div>
+                <div class="stat-value" th:text="${stats.totalFaculty}">0</div>
+                <div class="stat-meta d-flex align-items-center gap-1" style="color: var(--indigo-text);">
+                    <svg th:replace="~{fragments/icons :: academic-cap}" class="heroicon-xs"></svg>
+                    <span>Instructors & department chairs</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6">
+            <div class="stat-card stat-amber">
+                <div class="stat-header">
+                    <span class="stat-label">Active Sessions</span>
+                    <div class="stat-icon">
+                        <svg th:replace="~{fragments/icons :: signal}"></svg>
+                    </div>
+                </div>
+                <div class="stat-value" th:text="${stats.activeSessions}">0</div>
+                <div class="stat-meta d-flex align-items-center gap-1" style="color: var(--warning-text);">
+                    <svg th:replace="~{fragments/icons :: qr-code}" class="heroicon-xs"></svg>
+                    <span>Classroom QR streams live</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6">
+            <div class="stat-card stat-green">
+                <div class="stat-header">
+                    <span class="stat-label">Average Attendance</span>
+                    <div class="stat-icon">
+                        <svg th:replace="~{fragments/icons :: chart-bar}"></svg>
+                    </div>
+                </div>
+                <div class="stat-value"><span th:text="${stats.overallAttendancePercentage}">0.0</span>%</div>
+                <div class="stat-meta d-flex align-items-center gap-1" style="color: var(--success-text);">
+                    <svg th:replace="~{fragments/icons :: check-circle}" class="heroicon-xs"></svg>
+                    <span>Campus-wide semester average</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Administrative Quick Actions -->
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+            <svg th:replace="~{fragments/icons :: user-plus}"></svg>
+            <span>Register Student</span>
+        </button>
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addFacultyModal">
+            <svg th:replace="~{fragments/icons :: plus}"></svg>
+            <span>Add Faculty</span>
+        </button>
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addDepartmentModal">
+            <svg th:replace="~{fragments/icons :: building-office}"></svg>
+            <span>Add Department</span>
+        </button>
+        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addClassroomModal">
+            <svg th:replace="~{fragments/icons :: map-pin}"></svg>
+            <span>Add Classroom (GPS)</span>
+        </button>
+        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+            <svg th:replace="~{fragments/icons :: book-open}"></svg>
+            <span>Add Course</span>
+        </button>
+        <button class="btn btn-outline-success" onclick="syncAllToSupabase()">
+            <svg th:replace="~{fragments/icons :: arrow-path}"></svg>
+            <span>Sync to Supabase</span>
+        </button>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- Department Distribution -->
+        <div class="col-lg-7">
+            <div class="content-card h-100">
+                <div class="content-card-header">
+                    <h2 class="content-card-title">
+                        <svg th:replace="~{fragments/icons :: building-office}" class="text-primary"></svg>
+                        <span>Department Breakdown</span>
+                    </h2>
+                </div>
+                <div class="content-card-body p-0">
+                    <table class="table-custom">
+                        <thead>
+                        <tr>
+                            <th>Department Code</th>
+                            <th>Academic Department</th>
+                            <th>Students</th>
+                            <th>Faculty</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="d : ${stats.departmentStats}">
+                            <td><span class="badge bg-light text-primary font-mono border" th:text="${d.departmentCode}">CSE</span></td>
+                            <td class="font-semibold text-slate-800" th:text="${d.departmentName}">Computer Science</td>
+                            <td th:text="${d.studentCount}">0</td>
+                            <td th:text="${d.facultyCount}">0</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(stats.departmentStats)}">
+                            <td colspan="4" class="text-center text-muted py-3">No departmental data available.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Audit Log -->
+        <div class="col-lg-5">
+            <div class="content-card h-100">
+                <div class="content-card-header">
+                    <h2 class="content-card-title">
+                        <svg th:replace="~{fragments/icons :: clock}" class="text-warning"></svg>
+                        <span>System Activity Log</span>
+                    </h2>
+                </div>
+                <div class="content-card-body p-3">
+                    <div th:each="act : ${stats.recentActivity}" class="d-flex align-items-start gap-3 mb-3 border-bottom pb-2">
+                        <div class="p-2 rounded flex-shrink-0" style="background-color: var(--primary-subtle); color: var(--primary);">
+                            <svg th:replace="~{fragments/icons :: shield-check}" class="heroicon-sm"></svg>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between">
+                                <span class="font-semibold text-xs text-uppercase text-slate-800" th:text="${act.action}">ACTION</span>
+                                <span class="text-xs text-muted" th:text="${act.time}">Just now</span>
+                            </div>
+                            <div class="text-sm text-slate-600" th:text="${act.description}">Description</div>
+                        </div>
+                    </div>
+                    <div th:if="${#lists.isEmpty(stats.recentActivity)}" class="text-center text-muted py-4 text-sm">
+                        No recent system events logged.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registered Classrooms & Geofence Coordinates -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <h2 class="content-card-title">
+                <svg th:replace="~{fragments/icons :: map-pin}" class="text-success"></svg>
+                <span>Designated Campus Geofences</span>
+            </h2>
+        </div>
+        <div class="content-card-body p-0">
+            <div class="table-responsive">
+                <table class="table-custom">
+                    <thead>
+                    <tr>
+                        <th>Classroom / Facility</th>
+                        <th>Building</th>
+                        <th>Latitude</th>
+                        <th>Longitude</th>
+                        <th>Allowed Radius</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="c : ${classrooms}">
+                        <td class="font-semibold" th:text="${c.roomName}">Room 101</td>
+                        <td th:text="${c.buildingName}">Main Academic Complex</td>
+                        <td class="font-mono text-xs text-muted" th:text="${c.latitude}">28.0000000</td>
+                        <td class="font-mono text-xs text-muted" th:text="${c.longitude}">77.0000000</td>
+                        <td><span class="badge bg-light text-dark border font-mono" th:text="${c.allowedRadiusMeters} + ' m'">50 m</span></td>
+                        <td>
+                            <span class="badge badge-present">
+                                <svg th:replace="~{fragments/icons :: check-circle}" class="heroicon-xs me-1"></svg>
+                                <span>Active Geofence</span>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(classrooms)}">
+                        <td colspan="6" class="text-center text-muted py-3">No classrooms configured.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Faculty Directory & Course Assignments -->
+    <div class="content-card mt-4">
+        <div class="content-card-header d-flex justify-content-between align-items-center">
+            <h2 class="content-card-title mb-0">
+                <svg th:replace="~{fragments/icons :: academic-cap}" class="text-primary"></svg>
+                <span>Institutional Faculty Directory</span>
+            </h2>
+            <button class="btn btn-primary btn-sm d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#addFacultyModal">
+                <svg th:replace="~{fragments/icons :: plus}" class="heroicon-xs"></svg>
+                <span>Add Faculty Member</span>
+            </button>
+        </div>
+        <div class="content-card-body p-0">
+            <div class="table-responsive">
+                <table class="table-custom">
+                    <thead>
+                    <tr>
+                        <th>Faculty Member</th>
+                        <th>Employee ID</th>
+                        <th>Academic Department</th>
+                        <th>Institutional Email</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="f : ${faculties}">
+                        <td class="font-semibold text-slate-800" th:text="${f.fullName}">Dr. Priya Sharma</td>
+                        <td><span class="badge bg-light text-primary font-mono border" th:text="${f.employeeId}">FAC-101</span></td>
+                        <td th:text="${f.department != null ? f.department.departmentName : 'Unassigned'}">Computer Science</td>
+                        <td class="font-mono text-xs text-muted" th:text="${f.user != null ? f.user.email : 'N/A'}">faculty@scsvmv.ac.in</td>
+                        <td>
+                            <span class="badge badge-present" th:if="${f.user != null and f.user.accountStatus.name() == 'ACTIVE'}">Active</span>
+                            <span class="badge badge-absent" th:if="${f.user != null and f.user.accountStatus.name() != 'ACTIVE'}" th:text="${f.user.accountStatus}">Inactive</span>
+                        </td>
+                        <td class="text-end">
+                            <button type="button" class="btn btn-outline-danger btn-sm px-2 py-1 d-inline-flex align-items-center gap-1" 
+                                    th:data-id="${f.facultyId}"
+                                    th:data-name="${f.fullName}"
+                                    onclick="confirmDeleteFaculty(this)"
+                                    title="Delete Faculty Profile & Cascade">
+                                <svg class="heroicon-xs" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                <span>Delete</span>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(faculties)}">
+                        <td colspan="6" class="text-center text-muted py-3">No faculty profiles registered.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 1: Add Student -->
+    <div class="modal fade" id="addStudentModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-semibold">Register New Student</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addStudentForm" onsubmit="submitAddStudent(event)">
+                        <div class="mb-3">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" name="fullName" class="form-control" placeholder="e.g. Rahul Kumar" required>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="form-label">Username</label>
+                                <input type="text" name="username" class="form-control" placeholder="rahul.k" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Register Number</label>
+                                <input type="text" name="registerNumber" class="form-control" placeholder="21CS101" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Institutional Email</label>
+                            <input type="email" name="email" class="form-control" placeholder="student@scsvmv.ac.in" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Initial Password</label>
+                            <input type="password" name="password" class="form-control" value="admin123" required>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-6">
+                                <label class="form-label">Department</label>
+                                <select name="departmentId" class="form-select" required>
+                                    <option value="" disabled selected th:if="${!#lists.isEmpty(departments)}">Select Academic Department...</option>
+                                    <option th:each="d : ${departments}" th:value="${d.departmentId}" th:text="${d.departmentCode} + ' - ' + ${d.departmentName}"></option>
+                                    <option value="" disabled selected th:if="${#lists.isEmpty(departments)}">No departments available — click '+ Add Department' first</option>
+                                </select>
+                            </div>
+                            <div class="col-3">
+                                <label class="form-label">Year</label>
+                                <input type="number" name="yearOfStudy" class="form-control" value="3" required>
+                            </div>
+                            <div class="col-3">
+                                <label class="form-label">Section</label>
+                                <input type="text" name="section" class="form-control" value="A" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Create Student Profile</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Add Faculty -->
+    <div class="modal fade" id="addFacultyModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-semibold">Add Faculty Member</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addFacultyForm" onsubmit="submitAddFaculty(event)">
+                        <div class="mb-3">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" name="fullName" class="form-control" placeholder="e.g. Dr. Priya Sharma" required>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="form-label">Username</label>
+                                <input type="text" name="username" class="form-control" placeholder="prof.priya" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Employee ID</label>
+                                <input type="text" name="employeeId" class="form-control" placeholder="FAC-102" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Institutional Email</label>
+                            <input type="email" name="email" class="form-control" placeholder="faculty@scsvmv.ac.in" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Initial Password</label>
+                            <input type="password" name="password" class="form-control" value="admin123" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label font-medium">Department</label>
+                            <select name="departmentId" id="facultyDeptSelect" class="form-select" required onchange="filterCoursesByDept(this.value)">
+                                <option value="" disabled selected th:if="${!#lists.isEmpty(departments)}">Select Academic Department...</option>
+                                <option th:each="d : ${departments}" th:value="${d.departmentId}" th:text="${d.departmentCode} + ' - ' + ${d.departmentName}"></option>
+                                <option value="" disabled selected th:if="${#lists.isEmpty(departments)}">No departments available — click '+ Add Department' first</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label font-medium">Assigned Course / Undergraduate Curriculum Subject</label>
+                            <select name="subjectId" id="facultySubjectSelect" class="form-select" required>
+                                <option value="" disabled selected>Select Course / Subject...</option>
+                                <option th:each="s : ${subjects}" 
+                                        th:value="${s.subjectId}" 
+                                        th:data-dept-id="${s.department != null ? s.department.departmentId : ''}" 
+                                        th:text="${s.subjectCode} + ' - ' + ${s.subjectName} + ' (' + ${s.credits} + ' Credits)'">
+                                </option>
+                            </select>
+                            <div class="form-text text-muted">Courses are aligned with the SCSVMV undergraduate curriculum.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Create Faculty Profile</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: Add Classroom (GPS) -->
+    <div class="modal fade" id="addClassroomModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-semibold">Configure Classroom Geofence</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addClassroomForm" onsubmit="submitAddClassroom(event)">
+                        <div class="mb-3">
+                            <label class="form-label">Room Designation / Number</label>
+                            <input type="text" name="roomName" class="form-control" placeholder="e.g. Room 402" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Academic Building</label>
+                            <input type="text" name="buildingName" class="form-control" placeholder="e.g. Science & Computing Block" required>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="form-label">Latitude</label>
+                                <input type="number" step="any" name="latitude" id="geo-lat" class="form-control font-mono" placeholder="28.5458000" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Longitude</label>
+                                <input type="number" step="any" name="longitude" id="geo-lon" class="form-control font-mono" placeholder="77.1926000" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Permitted Geofence Radius (meters)</label>
+                            <input type="number" name="allowedRadiusMeters" class="form-control" value="50" required>
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm mb-3 w-100 d-flex align-items-center justify-content-center gap-1" onclick="autofillCurrentGps()">
+                            <svg th:replace="~{fragments/icons :: map-pin}" class="heroicon-xs"></svg>
+                            <span>Detect Current Device GPS</span>
+                        </button>
+                        <button type="submit" class="btn btn-primary w-100">Save Classroom Geofence</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: Add Course / Subject -->
+    <div class="modal fade" id="addSubjectModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-semibold">Add Course Catalog Entry</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addSubjectForm" onsubmit="submitAddSubject(event)">
+                        <div class="mb-3">
+                            <label class="form-label">Course Code</label>
+                            <input type="text" name="subjectCode" class="form-control font-mono" placeholder="e.g. CS401" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Course Title</label>
+                            <input type="text" name="subjectName" class="form-control" placeholder="e.g. Operating Systems" required>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-8">
+                                <label class="form-label">Department</label>
+                                <select name="departmentId" class="form-select" required>
+                                    <option value="" disabled selected th:if="${!#lists.isEmpty(departments)}">Select Academic Department...</option>
+                                    <option th:each="d : ${departments}" th:value="${d.departmentId}" th:text="${d.departmentCode} + ' - ' + ${d.departmentName}"></option>
+                                    <option value="" disabled selected th:if="${#lists.isEmpty(departments)}">No departments available — click '+ Add Department' first</option>
+                                </select>
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label">Credits</label>
+                                <input type="number" name="credits" class="form-control" value="3" min="1" max="6" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Register Course</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: Add Academic Department -->
+    <div class="modal fade" id="addDepartmentModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-semibold">Add Academic Department</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addDepartmentForm" onsubmit="submitAddDepartment(event)">
+                        <div class="mb-3">
+                            <label class="form-label">Department Code</label>
+                            <input type="text" name="departmentCode" class="form-control font-mono" placeholder="e.g. CSE" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Department Name</label>
+                            <input type="text" name="departmentName" class="form-control" placeholder="e.g. Computer Science & Engineering" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Create Department</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+async function submitAddDepartment(e) {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    try {
+        await fetchWithCsrf('/api/admin/departments', { method: 'POST', body: JSON.stringify(data) });
+        showToast('Department registered successfully', 'success');
+        setTimeout(() => location.reload(), 800);
+    } catch (err) {
+        showToast(err.message, 'danger');
+    }
+}
+async function submitAddStudent(e) {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    try {
+        await fetchWithCsrf('/api/admin/students', { method: 'POST', body: JSON.stringify(data) });
+        showToast('Student registered successfully', 'success');
+        setTimeout(() => location.reload(), 800);
+    } catch (err) {
+        showToast(err.message, 'danger');
+    }
+}
+
+function filterCoursesByDept(deptId) {
+    const subjectSelect = document.getElementById('facultySubjectSelect');
+    if (!subjectSelect) return;
+    const options = subjectSelect.querySelectorAll('option');
+    options.forEach(opt => {
+        if (!opt.value) return; // placeholder
+        const optDept = opt.getAttribute('data-dept-id');
+        if (!deptId || optDept === deptId || !optDept) {
+            opt.style.display = '';
+            opt.disabled = false;
+        } else {
+            opt.style.display = 'none';
+            opt.disabled = true;
+        }
+    });
+    const selectedOpt = subjectSelect.selectedOptions[0];
+    if (selectedOpt && selectedOpt.disabled) {
+        subjectSelect.value = '';
+    }
+}
+
+async function submitAddFaculty(e) {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    try {
+        await fetchWithCsrf('/api/admin/faculty', { method: 'POST', body: JSON.stringify(data) });
+        showToast('Faculty member added successfully', 'success');
+        setTimeout(() => location.reload(), 800);
+    } catch (err) {
+        showToast(err.message, 'danger');
+    }
+}
+
+async function submitAddClassroom(e) {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    try {
+        await fetchWithCsrf('/api/admin/classrooms', { method: 'POST', body: JSON.stringify(data) });
+        showToast('Classroom geofence saved successfully', 'success');
+        setTimeout(() => location.reload(), 800);
+    } catch (err) {
+        showToast(err.message, 'danger');
+    }
+}
+
+async function submitAddSubject(e) {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    try {
+        await fetchWithCsrf('/api/admin/subjects', { method: 'POST', body: JSON.stringify(data) });
+        showToast('Course registered successfully', 'success');
+        setTimeout(() => location.reload(), 800);
+    } catch (err) {
+        showToast(err.message, 'danger');
+    }
+}
+
+function autofillCurrentGps() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+            document.getElementById('geo-lat').value = pos.coords.latitude.toFixed(7);
+            document.getElementById('geo-lon').value = pos.coords.longitude.toFixed(7);
+            showToast('Current GPS coordinates detected', 'info');
+        }, err => {
+            showToast('Unable to detect GPS: ' + err.message, 'warning');
+        });
+    }
+}
+async function syncAllToSupabase() {
+    showToast('Starting full synchronization with Supabase...', 'info');
+    try {
+        const res = await fetchWithCsrf('/api/admin/supabase/sync', { method: 'POST' });
+        showToast('Supabase database sync initiated successfully!', 'success');
+    } catch (err) {
+        showToast('Supabase sync error: ' + err.message, 'danger');
+    }
+}
+async function confirmDeleteFaculty(target, name) {
+    let facultyId = target;
+    let facultyName = name;
+    if (typeof target === 'object' && target !== null) {
+        facultyId = target.getAttribute('data-id');
+        facultyName = target.getAttribute('data-name');
+    }
+    if (!confirm(`Are you sure you want to delete faculty profile "${facultyName}"? This will cascade-delete their course assignments and Supabase records.`)) {
+        return;
+    }
+    try {
+        await fetchWithCsrf('/api/admin/faculty/' + facultyId, { method: 'DELETE' });
+        showToast(`Faculty "${facultyName}" deleted successfully`, 'success');
+        setTimeout(() => location.reload(), 800);
+    } catch (err) {
+        showToast('Delete failed: ' + err.message, 'danger');
+    }
+}
+</script>
+</div>
+</body>
+</html>

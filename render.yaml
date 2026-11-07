@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: qr-attendance
+    env: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    region: oregon
+    healthCheckPath: /login
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: supabase
+      - key: SPRING_DATASOURCE_URL
+        value: jdbc:postgresql://db.rsxttzenmxkuwrfrbkbv.supabase.co:5432/postgres?sslmode=require
+      - key: SPRING_DATASOURCE_USERNAME
+        value: postgres
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: SUPABASE_URL
+        value: https://rsxttzenmxkuwrfrbkbv.supabase.co
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+

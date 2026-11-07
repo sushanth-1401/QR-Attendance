@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout('Attendance Records', ~{::#history-content})}">
+<body>
+<div id="history-content">
+
+    <!-- Course Attendance Metric Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-sm-6" th:each="s : ${summaries}">
+            <div class="stat-card" th:classappend="${s.attendancePercentage >= 75} ? 'stat-green' : 'stat-red'">
+                <div class="stat-header">
+                    <span class="stat-label font-mono" th:text="${s.subjectCode}">CS301</span>
+                    <div class="stat-icon">
+                        <svg th:replace="~{fragments/icons :: book-open}"></svg>
+                    </div>
+                </div>
+                <div class="stat-value"><span th:text="${s.attendancePercentage}">0.0</span>%</div>
+                <div class="stat-meta" th:text="${s.presentCount} + ' of ' + ${s.totalSessions} + ' sessions attended'">
+                    0 / 0 sessions
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance History Table -->
+    <div class="content-card">
+        <div class="content-card-header d-flex justify-content-between align-items-center">
+            <h2 class="content-card-title">
+                <svg th:replace="~{fragments/icons :: clock}" class="text-secondary"></svg>
+                <span>Verified Check-In History</span>
+            </h2>
+            <div class="d-flex gap-2">
+                <input type="text" id="filterInput" class="form-control form-control-sm" placeholder="Filter records..." aria-label="Filter attendance records" onkeyup="filterHistoryTable()">
+            </div>
+        </div>
+        <div class="content-card-body p-0">
+            <div class="table-responsive">
+                <table class="table-custom" id="historyTable">
+                    <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Course</th>
+                        <th>Status</th>
+                        <th>Verification Protocol</th>
+                        <th>Timestamp</th>
+                        <th>Geofence Proximity</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="r : ${records}">
+                        <td class="font-semibold text-slate-800" th:text="${r.session.sessionDate}">2026-11-04</td>
+                        <td>
+                            <strong th:text="${r.session.subject.subjectName}">DBMS</strong><br>
+                            <span class="text-xs text-muted font-mono" th:text="${r.session.subject.subjectCode}">CS301</span>
+                        </td>
+                        <td>
+                            <span th:if="${r.attendanceStatus.name() == 'PRESENT'}" class="badge badge-present">Present</span>
+                            <span th:unless="${r.attendanceStatus.name() == 'PRESENT'}" class="badge badge-absent">Absent</span>
+                        </td>
+                        <td>
+                            <span class="text-xs text-secondary font-mono" th:text="${r.verificationMethod}">QR + GPS + Passkey</span>
+                        </td>
+                        <td class="font-mono text-xs text-muted" th:text="${r.markedAt}">2026-11-04 10:00:00</td>
+                        <td>
+                            <span th:if="${r.distanceFromClassroom != null}" class="badge bg-light text-dark font-mono border">
+                                <span th:text="${r.distanceFromClassroom}">12.5</span> m
+                            </span>
+                            <span th:unless="${r.distanceFromClassroom != null}" class="text-muted">-</span>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(records)}">
+                        <td colspan="6" class="text-center text-muted py-4">No verified attendance records found.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function filterHistoryTable() {
+    const query = document.getElementById('filterInput').value.toLowerCase();
+    const rows = document.querySelectorAll('#historyTable tbody tr');
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(query) ? '' : 'none';
+    });
+}
+</script>
+</body>
+</html>

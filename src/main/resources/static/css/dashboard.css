@@ -1,0 +1,618 @@
+/* ==========================================================================
+   CampusPass - Academic Attendance & Verification Portal
+   Dashboard Layout, Enterprise Data Cards & Modular Components
+   Mobile-First & All-Screen Responsive (320px to 4K Displays)
+   ========================================================================== */
+
+/* Main Layout Wrapper */
+.dashboard-wrapper {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   Sidebar Navigation (Off-Canvas Drawer on Mobile / Fixed on Desktop)
+   -------------------------------------------------------------------------- */
+.dashboard-sidebar {
+    width: var(--sidebar-width);
+    background-color: #0f172a;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    color: #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1050;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar-header {
+    padding: 1.25rem 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sidebar-header .logo-icon {
+    width: 38px;
+    height: 38px;
+    background: #ffffff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sidebar-header h5 {
+    color: #ffffff;
+    font-size: 1rem;
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.sidebar-header .brand-subtitle {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    display: block;
+    margin-top: 1px;
+}
+
+.sidebar-close-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e2e8f0;
+    border-radius: var(--radius-sm);
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.sidebar-nav {
+    flex: 1;
+    padding: 1.25rem 0.75rem;
+    overflow-y: auto;
+}
+
+.nav-section-title {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    color: #94a3b8; /* WCAG AAA contrast against #0f172a */
+    padding: 0.65rem 0.75rem 0.35rem 0.75rem;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+}
+
+.nav-link-custom {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.625rem 0.875rem;
+    color: #cbd5e1;
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 3px;
+    transition: all 0.15s ease;
+}
+
+.nav-link-custom:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.nav-link-custom.active {
+    color: #ffffff;
+    background-color: rgba(29, 78, 216, 0.35);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    font-weight: 600;
+}
+
+.nav-link-custom svg {
+    color: #94a3b8;
+    transition: color 0.15s ease;
+}
+
+.nav-link-custom.active svg,
+.nav-link-custom:hover svg {
+    color: #ffffff;
+}
+
+.sidebar-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* --------------------------------------------------------------------------
+   Mobile Backdrop Overlay
+   -------------------------------------------------------------------------- */
+.sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(2px);
+    z-index: 1040;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.sidebar-backdrop.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* --------------------------------------------------------------------------
+   Main Content Area
+   -------------------------------------------------------------------------- */
+.dashboard-main {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-width: 0; /* Prevents flex children from causing horizontal scroll */
+}
+
+/* --------------------------------------------------------------------------
+   Top Navigation Bar
+   -------------------------------------------------------------------------- */
+.dashboard-topbar {
+    background-color: #ffffff;
+    border-bottom: 1px solid var(--slate-200);
+    padding: 0.85rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
+}
+
+.sidebar-toggle-btn {
+    border-color: var(--slate-300);
+    color: var(--slate-700);
+    background-color: #ffffff;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-toggle-btn:hover {
+    background-color: var(--slate-100);
+    color: var(--slate-900);
+}
+
+.topbar-page-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--slate-900);
+    margin: 0;
+}
+
+.user-profile-menu {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: var(--primary-subtle);
+    border: 1px solid var(--primary-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+/* Dashboard Content Container */
+.dashboard-content {
+    padding: 2rem;
+    flex: 1;
+    min-width: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Cohesive Palette Stat Cards
+   -------------------------------------------------------------------------- */
+.stat-card {
+    background: #ffffff;
+    border-radius: var(--radius-md);
+    padding: 1.35rem 1.5rem;
+    box-shadow: var(--shadow-xs);
+    border: 1px solid var(--slate-200);
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card:hover {
+    border-color: var(--slate-300);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.stat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.65rem;
+}
+
+.stat-label {
+    color: var(--slate-600);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.stat-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.stat-card:hover .stat-icon {
+    transform: scale(1.05);
+}
+
+/* Semantic Palette Accents for Stat Cards */
+.stat-blue .stat-icon   { color: var(--primary); background: var(--primary-subtle); border: 1px solid var(--primary-border); }
+.stat-green .stat-icon  { color: var(--success); background: var(--success-subtle); border: 1px solid var(--success-border); }
+.stat-amber .stat-icon  { color: var(--warning); background: var(--warning-subtle); border: 1px solid var(--warning-border); }
+.stat-red .stat-icon    { color: var(--danger);  background: var(--danger-subtle);  border: 1px solid var(--danger-border); }
+.stat-indigo .stat-icon { color: var(--indigo);  background: var(--indigo-subtle);  border: 1px solid var(--indigo-border); }
+
+.stat-value {
+    font-size: 1.85rem;
+    font-weight: 700;
+    color: var(--slate-900);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+
+.stat-meta {
+    font-size: 0.78rem;
+    color: var(--slate-600);
+    margin-top: 0.35rem;
+}
+
+/* --------------------------------------------------------------------------
+   Content Cards
+   -------------------------------------------------------------------------- */
+.content-card {
+    background: #ffffff;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-xs);
+    border: 1px solid var(--slate-200);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.content-card-header {
+    padding: 1.1rem 1.5rem;
+    border-bottom: 1px solid var(--slate-200);
+    background-color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.content-card-title {
+    font-size: 0.975rem;
+    font-weight: 600;
+    color: var(--slate-900);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.content-card-body {
+    padding: 1.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Data Tables
+   -------------------------------------------------------------------------- */
+.table-responsive {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+    border-radius: inherit;
+    width: 100%;
+}
+
+.table-custom {
+    width: 100%;
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table-custom th {
+    background-color: var(--slate-50);
+    color: var(--slate-700);
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--slate-200);
+    white-space: nowrap;
+}
+
+.table-custom td {
+    padding: 0.95rem 1.25rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--slate-200);
+    color: var(--slate-900);
+    font-size: 0.875rem;
+}
+
+.table-custom tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table-custom tbody tr:hover td {
+    background-color: var(--slate-50);
+}
+
+/* --------------------------------------------------------------------------
+   QR Projector Display Screen (Mobile & PC Responsive)
+   -------------------------------------------------------------------------- */
+.qr-display-container {
+    max-width: 580px;
+    width: 100%;
+    margin: 0 auto;
+    text-align: center;
+    background: #ffffff;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 2rem 1.5rem;
+    border: 1px solid var(--slate-200);
+}
+
+.qr-image-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: #ffffff;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--slate-200);
+    box-shadow: var(--shadow-xs);
+    margin: 1.25rem auto;
+    width: 100%;
+    max-width: 300px;
+    min-height: 260px;
+}
+
+.qr-image-wrapper img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+.qr-timer-bar {
+    height: 6px;
+    background-color: var(--slate-200);
+    border-radius: 9999px;
+    overflow: hidden;
+    margin: 0.85rem auto;
+    max-width: 280px;
+    width: 100%;
+}
+
+.qr-timer-progress {
+    height: 100%;
+    background-color: var(--primary);
+    width: 100%;
+    transition: width 1s linear;
+}
+
+/* --------------------------------------------------------------------------
+   Mobile Verification Stepper
+   -------------------------------------------------------------------------- */
+.scanner-viewport {
+    width: 100%;
+    max-width: 380px;
+    height: 280px;
+    background-color: #0f172a;
+    border-radius: 14px;
+    overflow: hidden;
+    margin: 0 auto 1.25rem auto;
+    position: relative;
+    border: 1px solid var(--slate-300);
+}
+
+.step-indicator-wrapper {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.75rem;
+    position: relative;
+}
+
+.step-indicator-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 17px;
+    left: 20px;
+    right: 20px;
+    height: 2px;
+    background-color: var(--slate-200);
+    z-index: 1;
+}
+
+.step-item {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    flex: 1;
+}
+
+.step-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    border: 2px solid var(--slate-300);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.4rem auto;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--slate-600);
+    transition: all 0.2s ease;
+}
+
+.step-item.active .step-circle {
+    border-color: var(--primary);
+    background-color: var(--primary);
+    color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.25);
+}
+
+.step-item.completed .step-circle {
+    border-color: var(--success);
+    background-color: var(--success);
+    color: #ffffff;
+}
+
+.step-item.failed .step-circle {
+    border-color: #ef4444;
+    background-color: #ef4444;
+    color: #ffffff;
+}
+
+.step-title {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--slate-600);
+}
+
+.step-item.active .step-title {
+    color: var(--slate-900);
+    font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   All-Screen Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+/* Large screens / Desktops */
+@media (min-width: 992px) {
+    .dashboard-sidebar {
+        transform: translateX(0) !important;
+    }
+}
+
+/* Tablets and Mobile devices */
+@media (max-width: 991.98px) {
+    .dashboard-sidebar {
+        transform: translateX(-100%);
+        box-shadow: none;
+    }
+
+    .dashboard-sidebar.show {
+        transform: translateX(0);
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
+    }
+
+    .dashboard-main {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .dashboard-topbar {
+        padding: 0.75rem 1.25rem;
+    }
+
+    .dashboard-content {
+        padding: 1.25rem;
+    }
+}
+
+/* Small mobile devices (phones < 576px) */
+@media (max-width: 575.98px) {
+    .dashboard-topbar {
+        padding: 0.65rem 0.875rem;
+    }
+
+    .topbar-page-title {
+        font-size: 1rem;
+    }
+
+    .dashboard-content {
+        padding: 1rem 0.75rem;
+    }
+
+    .stat-card {
+        padding: 1rem 1.15rem;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+
+    .content-card-header {
+        padding: 0.875rem 1rem;
+    }
+
+    .content-card-body {
+        padding: 1rem;
+    }
+
+    .table-custom th, .table-custom td {
+        padding: 0.75rem 0.875rem;
+        font-size: 0.8125rem;
+    }
+
+    .qr-display-container {
+        padding: 1.5rem 1rem;
+    }
+
+    .step-title {
+        font-size: 0.65rem;
+    }
+
+    .step-circle {
+        width: 32px;
+        height: 32px;
+    }
+}

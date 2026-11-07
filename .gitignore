@@ -1,0 +1,29 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Node & Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Java / Maven build outputs
+target/
+*.class
+BOOT-INF/
+
+# Database data directory
+data/
+
+# IDE and Editor files
+.idea/
+*.iml
+.vscode/
+*.suo
+*.user
+
+# Portable Tools & Cache
+tools/
+*.log
