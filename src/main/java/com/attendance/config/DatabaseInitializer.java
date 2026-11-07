@@ -69,6 +69,17 @@ public class DatabaseInitializer {
     }
 
     @EventListener(ApplicationReadyEvent.class)
+    public void onApplicationReady() {
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                Thread.sleep(1500); // Allow web server to bind and respond to Vercel healthcheck immediately
+                initializeDefaultData();
+            } catch (Exception e) {
+                log.warn("[DatabaseInitializer] Initialization note: {}", e.getMessage());
+            }
+        });
+    }
+
     @Transactional
     public void initializeDefaultData() {
         try {
