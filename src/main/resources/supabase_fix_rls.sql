@@ -178,13 +178,16 @@ ALTER TABLE faculty_subject_assignments REPLICA IDENTITY FULL;
 ALTER TABLE attendance_sessions REPLICA IDENTITY FULL;
 ALTER TABLE attendance_records REPLICA IDENTITY FULL;
 
--- 5. Automatically mirror public.users into Supabase Authentication (auth.users)
--- This makes all users visible in the Supabase Dashboard "Authentication -> Users" page!
+-- 5. Automatically mirror public.users into Supabase Authentication (auth.users and auth.identities)
+-- This makes all users visible in the Supabase Dashboard "Authentication -> Users" page
+-- and prevents "Database error loading user" by ensuring matching identity rows exist.
 CREATE OR REPLACE FUNCTION public.sync_user_to_supabase_auth()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
+DECLARE
+    new_auth_id uuid := gen_random_uuid();
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = NEW.email) THEN
         INSERT INTO auth.users (
@@ -202,7 +205,7 @@ BEGIN
             confirmation_token
         ) VALUES (
             '00000000-0000-0000-0000-000000000000',
-            gen_random_uuid(),
+            new_auth_id,
             'authenticated',
             'authenticated',
             NEW.email,
@@ -213,6 +216,26 @@ BEGIN
             now(),
             now(),
             ''
+        );
+
+        INSERT INTO auth.identities (
+            id,
+            user_id,
+            identity_data,
+            provider,
+            provider_id,
+            last_sign_in_at,
+            created_at,
+            updated_at
+        ) VALUES (
+            new_auth_id::text,
+            new_auth_id,
+            jsonb_build_object('sub', new_auth_id::text, 'email', NEW.email),
+            'email',
+            new_auth_id::text,
+            now(),
+            now(),
+            now()
         );
     END IF;
     RETURN NEW;
@@ -225,38 +248,92 @@ AFTER INSERT ON public.users
 FOR EACH ROW
 EXECUTE FUNCTION public.sync_user_to_supabase_auth();
 
--- Backfill all existing public.users immediately into auth.users so Authentication -> Users is populated
-INSERT INTO auth.users (
-    instance_id,
+-- Synchronize deletions from public.users to auth.users automatically
+CREATE OR REPLACE FUNCTION public.sync_user_delete_to_auth()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    DELETE FROM auth.identities WHERE user_id IN (SELECT id FROM auth.users WHERE email = OLD.email);
+    DELETE FROM auth.users WHERE email = OLD.email;
+    RETURN OLD;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trigger_sync_user_delete_to_auth ON public.users;
+CREATE TRIGGER trigger_sync_user_delete_to_auth
+AFTER DELETE ON public.users
+FOR EACH ROW
+EXECUTE FUNCTION public.sync_user_delete_to_auth();
+
+-- 6. Backfill missing auth.identities for existing auth.users
+-- This immediately resolves the Supabase Dashboard "Database error loading user" error!
+INSERT INTO auth.identities (
     id,
-    aud,
-    role,
-    email,
-    encrypted_password,
-    email_confirmed_at,
-    raw_app_meta_data,
-    raw_user_meta_data,
+    user_id,
+    identity_data,
+    provider,
+    provider_id,
+    last_sign_in_at,
     created_at,
-    updated_at,
-    confirmation_token
+    updated_at
 )
-SELECT
-    '00000000-0000-0000-0000-000000000000',
-    gen_random_uuid(),
-    'authenticated',
-    'authenticated',
-    u.email,
-    u.password_hash,
-    now(),
-    '{"provider":"email","providers":["email"]}'::jsonb,
-    json_build_object('username', u.username, 'role', u.role)::jsonb,
+SELECT 
+    u.id::text,
+    u.id,
+    jsonb_build_object('sub', u.id::text, 'email', u.email),
+    'email',
+    u.id::text,
     now(),
     now(),
-    ''
-FROM public.users u
+    now()
+FROM auth.users u
 WHERE NOT EXISTS (
-    SELECT 1 FROM auth.users a WHERE a.email = u.email
+    SELECT 1 FROM auth.identities i WHERE i.user_id = u.id
 );
+
+-- Backfill any existing public.users into auth.users + auth.identities
+DO $$
+DECLARE
+    usr RECORD;
+    new_id uuid;
+BEGIN
+    FOR usr IN SELECT * FROM public.users WHERE email NOT IN (SELECT email FROM auth.users WHERE email IS NOT NULL)
+    LOOP
+        new_id := gen_random_uuid();
+        INSERT INTO auth.users (
+            instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+            raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token
+        ) VALUES (
+            '00000000-0000-0000-0000-000000000000',
+            new_id,
+            'authenticated',
+            'authenticated',
+            usr.email,
+            usr.password_hash,
+            now(),
+            '{"provider":"email","providers":["email"]}'::jsonb,
+            json_build_object('username', usr.username, 'role', usr.role)::jsonb,
+            now(),
+            now(),
+            ''
+        );
+
+        INSERT INTO auth.identities (
+            id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at
+        ) VALUES (
+            new_id::text,
+            new_id,
+            jsonb_build_object('sub', new_id::text, 'email', usr.email),
+            'email',
+            new_id::text,
+            now(),
+            now(),
+            now()
+        );
+    END LOOP;
+END $$;
 
 
 
