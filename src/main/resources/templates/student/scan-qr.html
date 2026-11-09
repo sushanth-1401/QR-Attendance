@@ -17,7 +17,7 @@
                     </p>
                 </div>
 
-                <!-- 4-Step Verification Indicator with Heroicons -->
+                <!-- 3-Step Verification Indicator with Heroicons -->
                 <div class="step-indicator-wrapper">
                     <div id="step-1" class="step-item active">
                         <div class="step-circle">
@@ -36,12 +36,6 @@
                             <svg th:replace="~{fragments/icons :: map-pin}" class="heroicon-sm"></svg>
                         </div>
                         <div id="step-3-desc" class="step-title">Geofence</div>
-                    </div>
-                    <div id="step-4" class="step-item">
-                        <div class="step-circle">
-                            <svg th:replace="~{fragments/icons :: key}" class="heroicon-sm"></svg>
-                        </div>
-                        <div id="step-4-desc" class="step-title">Passkey</div>
                     </div>
                 </div>
 
@@ -88,9 +82,8 @@
     <!-- Supabase Realtime Dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script th:src="@{/js/supabase-realtime.js}"></script>
-    <!-- Location, Device, and QR Scanner scripts -->
+    <!-- Location and QR Scanner scripts -->
     <script th:src="@{/js/location.js}"></script>
-    <script th:src="@{/js/device-verification.js}"></script>
     <script th:src="@{/js/qr-scanner.js}"></script>
 
     <script>

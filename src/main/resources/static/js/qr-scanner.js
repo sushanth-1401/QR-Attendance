@@ -109,31 +109,14 @@ async function onQrCodeSuccess(decodedText, decodedResult) {
             throw new Error(gpsErr.message || "Failed to obtain GPS location");
         }
 
-        // Step 3: Solve Device Challenge (Cryptographic ECDSA Signature)
-        updateStepStatus(4, 'active', 'Authenticating device key...');
-        let deviceVerificationPayload = { deviceId: null, challengeId: null, signature: null };
-        try {
-            const isReg = await DeviceAuthManager.isDeviceRegisteredLocally();
-            if (isReg) {
-                deviceVerificationPayload = await DeviceAuthManager.solveDeviceChallenge();
-                updateStepStatus(4, 'completed', 'Device Signature Verified');
-            } else {
-                console.warn("Device not registered yet in this browser. Submitting with GPS.");
-                updateStepStatus(4, 'completed', 'Device Check (Unregistered Mode)');
-            }
-        } catch (devErr) {
-            console.warn("Device authentication warning:", devErr);
-            updateStepStatus(4, 'completed', 'Device Step (Bypassed)');
-        }
-
-        // Step 4: Submit Final Verification
+        // Step 3: Submit Final Verification
         const verifyResponse = await fetchWithCsrf(`/api/student/attendance/${attemptId}/verify`, {
             method: 'POST',
             body: JSON.stringify({
                 location: locationData,
-                deviceId: deviceVerificationPayload.deviceId,
-                signature: deviceVerificationPayload.signature,
-                challengeId: deviceVerificationPayload.challengeId
+                deviceId: null,
+                signature: null,
+                challengeId: null
             })
         });
 
@@ -166,7 +149,7 @@ async function onQrCodeSuccess(decodedText, decodedResult) {
                     longitude: locationData ? locationData.longitude : null,
                     gps_accuracy_meters: locationData ? locationData.accuracy : null,
                     distance_from_classroom: (verifyResponse && verifyResponse.details) ? verifyResponse.details.distanceMeters : null,
-                    verification_method: 'QR + GPS + Device Passkey',
+                    verification_method: 'QR + GPS',
                     created_at: new Date().toISOString()
                 });
             }
